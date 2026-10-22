@@ -4,14 +4,14 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { errMsg } from '@/lib/api';
 
-export default function GoogleButton({ onSuccess }) {
+export default function GoogleButton({ onSuccess, mode = 'login' }) {
   const { googleLogin } = useAuth();
   if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) return <p className="small muted center">Google sign-in is not configured yet (add NEXT_PUBLIC_GOOGLE_CLIENT_ID).</p>;
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
       <GoogleLogin
         width="360"
-        text="continue_with"
+        text={mode === 'signup' ? 'signup_with' : 'signin_with'}
         shape="rectangular"
         onSuccess={async (res) => {
           try { onSuccess(await googleLogin(res.credential)); } catch (e) { toast.error(errMsg(e)); }

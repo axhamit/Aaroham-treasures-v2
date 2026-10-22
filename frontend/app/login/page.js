@@ -33,7 +33,7 @@ function LoginForm() {
     <div className="container page"><div className="auth">
       <h1 className="center">Log in</h1>
       <div className="card">
-        <GoogleButton onSuccess={done} />
+        <GoogleButton onSuccess={done} mode="login" />
         <div className="divider">or use your email</div>
         <form className="stack" onSubmit={submit}>
           <div className="field"><label>Email</label><input className="input" type="email" required autoComplete="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>

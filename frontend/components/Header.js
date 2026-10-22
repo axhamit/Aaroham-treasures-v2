@@ -42,19 +42,30 @@ export default function Header() {
             <Link href="/cart" className="icon-btn" aria-label="Shopping bag"><ShoppingBag size={20} />{cartCount > 0 && <span className="count">{cartCount}</span>}</Link>
             <div style={{ position: 'relative' }} ref={ref}>
               {user ? (
-                <button className="icon-btn" aria-label="Account" onClick={() => setMenu(!menu)}>
+                <button className="icon-btn" aria-label="Account" aria-expanded={menu} onClick={() => setMenu(!menu)}>
                   {user.avatar ? <img src={user.avatar} alt="" width={28} height={28} style={{ borderRadius: '50%' }} referrerPolicy="no-referrer" /> : <User size={20} />}
                 </button>
               ) : (
-                <Link href="/login" className="icon-btn" aria-label="Log in"><User size={20} /></Link>
+                <button className="icon-btn" aria-label="Log in or create an account" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+                  <User size={20} />
+                </button>
               )}
-              {menu && user && (
+              {menu && (
                 <div className="dropdown">
-                  <div style={{ padding: '10px 12px' }}><div>{user.name}</div><div className="small muted">{user.email}</div></div>
-                  <Link href="/profile">My profile</Link>
-                  <Link href="/profile?tab=orders">My orders</Link>
-                  {user.role === 'admin' && <Link href="/admin">Admin panel</Link>}
-                  <button onClick={() => { logout(); router.push('/'); }}>Log out</button>
+                  {user ? (
+                    <>
+                      <div style={{ padding: '10px 12px' }}><div>{user.name}</div><div className="small muted">{user.email}</div></div>
+                      <Link href="/profile">My profile</Link>
+                      <Link href="/profile?tab=orders">My orders</Link>
+                      {user.role === 'admin' && <Link href="/admin">Admin panel</Link>}
+                      <button onClick={() => { logout(); router.push('/'); }}>Log out</button>
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/login">Log in</Link>
+                      <Link href="/register">Create account</Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>

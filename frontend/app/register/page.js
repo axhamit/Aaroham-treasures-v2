@@ -24,7 +24,7 @@ function RegisterForm() {
     <div className="container page"><div className="auth">
       <h1 className="center">Create account</h1>
       <div className="card">
-        <GoogleButton onSuccess={done} />
+        <GoogleButton onSuccess={done} mode="signup" />
         <div className="divider">or sign up with email</div>
         <form className="stack" onSubmit={submit}>
           <div className="field"><label>Full name</label><input className="input" required autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
