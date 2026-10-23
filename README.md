@@ -82,14 +82,22 @@ If these are empty and `NODE_ENV` is not `production`, checkout shows a **demo p
 
 Flow: server creates the order, then a Razorpay order, the browser opens Razorpay Checkout, and on success the browser sends the payment id and signature to `POST /api/orders/:id/verify-payment`, which verifies the signature before marking the order paid.
 
-## 6. Folder structure
+## 6. Shipping orders with Delhivery
+1. For testing, set `DELHIVERY_BASE_URL=https://staging-express.delhivery.com`. Set `DELHIVERY_API_TOKEN`, `DELHIVERY_CLIENT_NAME`, and `DELHIVERY_WAREHOUSE_NAME` to the matching staging-account credentials and names in `backend/.env`. The client and warehouse names must match your Delhivery account. Use `https://track.delhivery.com` only when switching to production with production credentials.
+2. The default parcel is **0.5 kg, 20 × 15 × 10 cm**. Change `DELHIVERY_DEFAULT_WEIGHT_KG`, `DELHIVERY_DEFAULT_LENGTH_CM`, `DELHIVERY_DEFAULT_BREADTH_CM`, and `DELHIVERY_DEFAULT_HEIGHT_CM` if your standard package differs.
+3. COD orders are sent to Delhivery when placed. Online orders are sent after payment is verified. These orders are booked as single-piece shipments; Delhivery assigns the waybill during shipment creation. The confirmed waybill is saved as the order tracking number. Open Admin → Orders to view tracking, download the label, or manage a shipment.
+4. If automatic shipment creation fails, the store order remains saved and the admin can retry from its order page. If a request has an uncertain result, check Delhivery before authorizing a retry to avoid duplicate shipments.
+
+Shipment creation requires valid Delhivery credentials, a configured pickup/warehouse location, and accurate parcel defaults. Delhivery handles carrier delivery after accepting the shipment; pickup/collection timing and service availability depend on your Delhivery account and pickup location. Existing Shiprocket records are retained for historical orders and are not migrated.
+
+## 7. Folder structure
 ```
 backend/
   server.js            app setup: CORS, helmet, rate limit, routes
   seed.js              creates admin + sample products
   models/              User, Product, Order, Setting
   middleware/          auth (JWT + admin), upload (multer), error
-  routes/              auth, products, me, orders, settings, admin
+  routes/              auth, products, me, orders, settings, admin, Delhivery (plus legacy Shiprocket reconciliation)
 frontend/
   app/                 pages (home, products, cart, checkout, orders, profile, login…)
   app/admin/           dashboard, products, orders, users, settings
@@ -98,7 +106,7 @@ frontend/
   lib/                 api client (adds the JWT), Razorpay helper
 ```
 
-## 7. API reference
+## 8. API reference
 | Method | Route | Access |
 |---|---|---|
 | POST | `/api/auth/register`, `/login`, `/google` | public |
@@ -116,8 +124,9 @@ frontend/
 | GET | `/api/admin/stats`, `/orders`, `/orders/export?format=xlsx\|csv`, `/users` | admin |
 | PUT | `/api/admin/orders/:id/status`, `/users/:id` | admin |
 | POST | `/api/admin/upload`, `/users` | admin |
+| POST | `/api/delhivery/orders/:orderId/create-shipment`, `/reconcile-shipment`, `/cancel-shipment` | admin |
 
-## 8. Before you go live
+## 9. Before you go live
 - Set `NODE_ENV=production`, a long random `JWT_SECRET`, real `CLIENT_URL`, and Razorpay **live** keys.
 - Change the seeded admin password. Add your production domain to the Google OAuth origins.
 - **Images**: uploads are saved to `backend/uploads` on the server disk, which is wiped on most hosts (Render, Railway, Heroku). Move to Cloudinary or S3 for production. Only `middleware/upload.js` needs to change.
@@ -125,7 +134,7 @@ frontend/
 - Deploy the backend (Render, Railway, a VPS) and the frontend (Vercel). Set `NEXT_PUBLIC_API_URL` to the deployed API.
 - Serve everything over HTTPS.
 
-## 9. Known limits and good next steps
+## 10. Known limits and good next steps
 - The JWT is kept in `localStorage`. It is simple and works well, but a script injected into the page could read it. For higher security, move it to an `httpOnly` cookie.
 - Stock is reserved when an order is created. An online order that is never paid keeps its stock reserved until it is cancelled. Add a scheduled job to auto-cancel unpaid orders after some hours.
 - Refunds mark the order "Refunded" but you still trigger the money refund from the Razorpay dashboard (or add `razorpay.payments.refund`).

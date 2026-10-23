@@ -57,7 +57,22 @@ const orderSchema = new mongoose.Schema(
       description: String,
     }],
     delhiveryShipmentCreated: { type: Boolean, default: false },
+    delhiveryShipmentState: {
+      type: String,
+      enum: ['not_created', 'creating', 'created', 'unknown', 'cancelled'],
+      default: 'not_created',
+    },
+    delhiveryShipmentAttemptedAt: Date,
     delhiveryPickupScheduled: { type: Boolean, default: false },
+    shiprocketOrderId: String,
+    shiprocketShipmentId: String,
+    shiprocketOrderCreated: { type: Boolean, default: false },
+    shiprocketOrderState: {
+      type: String,
+      enum: ['not_created', 'creating', 'created', 'unknown'],
+      default: 'not_created',
+    },
+    shiprocketOrderAttemptedAt: Date,
   },
   { timestamps: true }
 );

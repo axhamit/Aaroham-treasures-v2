@@ -1,36 +1,130 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Download } from 'lucide-react';
+import { Ban, Download, Printer, RefreshCw } from 'lucide-react';
 import api, { errMsg, fmtDateTime, img, money } from '@/lib/api';
 import Modal from '@/components/Modal';
 import OrderTimeline from '@/components/OrderTimeline';
 
 const STATUSES = ['Placed', 'Confirmed', 'Packed', 'Shipped', 'Out for delivery', 'Delivered', 'Cancelled'];
 const cls = (s) => (s === 'Delivered' ? 'good' : s === 'Cancelled' ? 'bad' : s === 'Placed' ? 'warn' : '');
+const shipmentErrorMessage = (error) => {
+  const data = error?.response?.data;
+  const detail = data?.details || data?.errors || data?.error;
+  const detailText = typeof detail === 'string'
+    ? detail
+    : Array.isArray(detail)
+      ? detail.map((item) => typeof item === 'string' ? item : JSON.stringify(item)).join('; ')
+      : detail && typeof detail === 'object'
+        ? JSON.stringify(detail)
+        : '';
+  const message = data?.message || error?.message || 'Failed to create shipment';
+  return detailText && detailText !== message ? `${message}: ${detailText}` : message;
+};
 
 export default function AdminOrders() {
   const [f, setF] = useState({ q: '', status: '', payment: '', from: '', to: '' });
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(null);
-  const [upd, setUpd] = useState({ status: '', note: '', courier: '', trackingNumber: '', assignedCourier: '' });
-  const [couriers, setCouriers] = useState([]);
+  const [upd, setUpd] = useState({ status: '', note: '', courier: '', trackingNumber: '' });
+  const [creatingShipment, setCreatingShipment] = useState(false);
+  const [trackingShipment, setTrackingShipment] = useState(false);
 
   const load = useCallback(() => api.get('/admin/orders', { params: { ...f, page } }).then((r) => setData(r.data)), [f, page]);
-  const loadCouriers = useCallback(() => api.get('/admin/users', { params: { role: 'courier' } }).then((r) => setCouriers(r.data)), []);
 
-  useEffect(() => { load(); loadCouriers(); }, [load, loadCouriers]);
+  useEffect(() => { load(); }, [load]);
 
-  const select = (o) => { setOpen(o); setUpd({ status: o.status, note: '', courier: o.courier || '', trackingNumber: o.trackingNumber || '', assignedCourier: o.assignedCourier || '' }); };
+  const select = (o) => {
+    setOpen(o);
+    setUpd({ status: o.status, note: '', courier: o.courier || '', trackingNumber: o.trackingNumber || '' });
+  };
 
   const save = async () => {
     try {
-      const payload = { ...upd };
-      if (!payload.assignedCourier) delete payload.assignedCourier;
-      const { data: o } = await api.put(`/admin/orders/${open._id}/status`, payload);
+      const { data: o } = await api.put(`/admin/orders/${open._id}/status`, upd);
       setOpen(o); setUpd({ ...upd, note: '' }); toast.success('Order updated'); load();
     } catch (e) { toast.error(errMsg(e)); }
+  };
+
+  const createDelhiveryShipment = async () => {
+    if (!open || creatingShipment) return;
+    setCreatingShipment(true);
+    try {
+      const { data: result } = await api.post(`/delhivery/orders/${open._id}/create-shipment`);
+      setOpen((current) => ({ ...current, ...result.order, user: current.user }));
+      setUpd((current) => ({ ...current, courier: 'Delhivery', trackingNumber: result.waybill }));
+      toast.success(result.message);
+      load();
+    } catch (e) {
+      toast.error(shipmentErrorMessage(e));
+    } finally {
+      setCreatingShipment(false);
+    }
+  };
+
+  const confirmShiprocketCancellation = async () => {
+    if (!open || !window.confirm('Confirm that you already cancelled this order in Shiprocket?')) return;
+    try {
+      const { data: result } = await api.post(`/shiprocket/orders/${open._id}/confirm-cancellation`, { confirmedCancellation: true });
+      setOpen((current) => ({ ...current, ...result.order, user: current.user }));
+      toast.success(result.message);
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
+
+  const refreshDelhiveryTracking = async () => {
+    if (!open || trackingShipment) return;
+    setTrackingShipment(true);
+    try {
+      const { data: result } = await api.get(`/delhivery/orders/${open._id}/track`);
+      setOpen((current) => ({ ...current, ...result.order, user: current.user }));
+      setUpd((current) => ({ ...current, status: result.order.status }));
+      toast.success('Delhivery tracking updated');
+      load();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setTrackingShipment(false);
+    }
+  };
+
+  const downloadLabel = async () => {
+    try {
+      const { data: file } = await api.get(`/delhivery/orders/${open._id}/label`, { responseType: 'blob' });
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `label-${open.orderNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
+
+  const cancelDelhiveryShipment = async () => {
+    if (!open || !window.confirm('Cancel this Delhivery shipment?')) return;
+    try {
+      const { data: result } = await api.post(`/delhivery/orders/${open._id}/cancel-shipment`);
+      setOpen((current) => ({ ...current, ...result.order, user: current.user }));
+      toast.success('Delhivery shipment cancelled');
+      load();
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
+
+  const reconcileDelhiveryShipment = async () => {
+    if (!open || !window.confirm('Check your Delhivery account first. Confirm that no shipment was created for this order?')) return;
+    try {
+      const { data: result } = await api.post(`/delhivery/orders/${open._id}/reconcile-shipment`, { confirmedNoShipment: true });
+      setOpen((current) => ({ ...current, ...result.order, user: current.user }));
+      toast.success('You can now retry shipment creation');
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
   };
 
   // download with the auth header, then save the blob as a file
@@ -99,13 +193,67 @@ export default function AdminOrders() {
                 <h3 style={{ fontSize: 20, marginBottom: 12 }}>Update order</h3>
                 <div className="stack">
                   <div className="field"><label>Status</label><select className="input" value={upd.status} onChange={(e) => setUpd({ ...upd, status: e.target.value })}>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></div>
-                  <div className="field"><label>Assign Courier</label><select className="input" value={upd.assignedCourier} onChange={(e) => setUpd({ ...upd, assignedCourier: e.target.value })}><option value="">Unassigned</option>{couriers.map((c) => <option key={c._id} value={c._id}>{c.name} ({c.vehicleNumber || 'No vehicle'})</option>)}</select></div>
                   <div className="grid2">
-                    <div className="field"><label>Courier Name (Manual)</label><input className="input" value={upd.courier} onChange={(e) => setUpd({ ...upd, courier: e.target.value })} placeholder="e.g., Delhivery" /></div>
+                    <div className="field"><label>Delivery company / partner</label><input className="input" value={upd.courier} onChange={(e) => setUpd({ ...upd, courier: e.target.value })} placeholder="e.g., Delhivery" /></div>
                     <div className="field"><label>Tracking number</label><input className="input" value={upd.trackingNumber} onChange={(e) => setUpd({ ...upd, trackingNumber: e.target.value })} /></div>
                   </div>
+                  <p className="muted small">The delivery company manages its own delivery staff. You only need to provide the company and tracking number.</p>
                   <div className="field"><label>Note for the customer (optional)</label><input className="input" value={upd.note} onChange={(e) => setUpd({ ...upd, note: e.target.value })} placeholder="e.g. Left the warehouse in Bengaluru" /></div>
                   <button className="btn btn-primary" onClick={save}>Save update</button>
+                </div>
+              </div>
+              <div className="card" style={{ background: 'var(--bg)' }}>
+                <h3 style={{ fontSize: 20, marginBottom: 12 }}>
+                  Delhivery shipment
+                </h3>
+                <div className="stack">
+                  {open.delhiveryShipmentCreated || ['unknown', 'creating'].includes(open.delhiveryShipmentState) ? (
+                    open.delhiveryShipmentCreated ? (
+                    <>
+                      <p className="small">Waybill: <strong>{open.delhiveryWaybill}</strong></p>
+                      <p className="small">Latest status: <strong>{open.delhiveryStatus || 'Awaiting carrier update'}</strong></p>
+                      <div className="row wrap">
+                        <button className="btn btn-outline" onClick={refreshDelhiveryTracking} disabled={trackingShipment}>
+                          <RefreshCw size={16} />{trackingShipment ? 'Refreshing…' : 'Refresh tracking'}
+                        </button>
+                        <button className="btn btn-outline" onClick={downloadLabel}><Printer size={16} />Download label</button>
+                        <button className="btn btn-outline" onClick={cancelDelhiveryShipment}><Ban size={16} />Cancel shipment</button>
+                      </div>
+                      {!!open.delhiveryTracking?.length && <div className="stack" style={{ marginTop: 8 }}>
+                        <strong className="small">Carrier events</strong>
+                        {open.delhiveryTracking.map((event, index) => (
+                          <div className="small muted" key={`${event.date || ''}-${index}`}>
+                            {event.date ? `${fmtDateTime(event.date)} · ` : ''}{event.status || event.description}
+                            {event.location ? ` · ${event.location}` : ''}
+                          </div>
+                        ))}
+                      </div>}
+                    </>
+                    ) : (
+                    <>
+                      <p className="small" role="alert">
+                        {open.delhiveryShipmentState === 'creating'
+                          ? 'A Delhivery request may still be in progress. Do not send this order to another courier until you verify its status.'
+                          : 'Delhivery did not confirm the last request. Verify in Delhivery before attempting another shipment to avoid duplicates.'}
+                      </p>
+                      {open.delhiveryShipmentState === 'unknown' && (
+                        <button className="btn btn-outline" onClick={reconcileDelhiveryShipment}>I verified no shipment exists — allow retry</button>
+                      )}
+                    </>
+                    )
+                  ) : open.shiprocketOrderCreated ? (
+                    <>
+                      <p className="small">This is a legacy Shiprocket order (ID: <strong>{open.shiprocketOrderId}</strong>). Existing shipments are not migrated automatically; finish or cancel this one in the original account.</p>
+                      <button className="btn btn-outline" onClick={confirmShiprocketCancellation}>I cancelled this legacy shipment</button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="muted small">Eligible orders are sent to Delhivery automatically using the configured default parcel size. If automatic creation failed, retry it here.</p>
+                      <button className="btn btn-outline" onClick={createDelhiveryShipment} disabled={creatingShipment || ['creating', 'unknown'].includes(open.delhiveryShipmentState) || (open.paymentMethod === 'ONLINE' && open.paymentStatus !== 'Paid')}>
+                        {creatingShipment ? 'Creating shipment…' : 'Create Delhivery shipment'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <OrderTimeline order={open} />

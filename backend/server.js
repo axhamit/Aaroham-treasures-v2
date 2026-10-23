@@ -35,6 +35,7 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/courier', require('./routes/courier'));
 app.use('/api/delhivery', require('./routes/delhivery'));
+app.use('/api/shiprocket', require('./routes/shiprocket'));
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.use(notFound);

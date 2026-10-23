@@ -16,8 +16,12 @@ function loadRazorpay() {
 export async function startPayment({ order, razorpay, demoPayment, user, storeName, onDone }) {
   const verify = async (body) => {
     try {
-      await api.post(`/orders/${order._id}/verify-payment`, body);
-      toast.success('Payment received');
+      const { data } = await api.post(`/orders/${order._id}/verify-payment`, body);
+      if (data.delivery?.success === false) {
+        toast.error(`Payment received, but Delhivery shipment needs attention: ${data.delivery.message}`);
+      } else {
+        toast.success('Payment received');
+      }
     } catch (e) { toast.error(errMsg(e)); }
     onDone && onDone();
   };

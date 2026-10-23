@@ -46,7 +46,12 @@ function Checkout() {
     try {
       const { data } = await api.post('/orders', { addressId: sel, paymentMethod: method });
       const go = async () => { await refresh(); router.push(`/orders/${data.order._id}?placed=1`); };
-      if (method === 'COD') return go();
+      if (method === 'COD') {
+        if (data.delivery?.success === false) {
+          toast.error(`Order placed, but Delhivery shipment needs attention: ${data.delivery.message}`);
+        }
+        return go();
+      }
       await startPayment({ order: data.order, razorpay: data.razorpay, demoPayment: data.demoPayment, user, storeName: settings.storeName, onDone: go });
     } catch (e) { toast.error(errMsg(e)); setBusy(false); }
   };

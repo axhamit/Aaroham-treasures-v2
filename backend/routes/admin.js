@@ -120,23 +120,19 @@ router.get('/orders/export', async (req, res, next) => {
 
 router.put('/orders/:id/status', async (req, res, next) => {
   try {
-    const { status, note, courier, trackingNumber, assignedCourier } = req.body;
+    const { status, note, courier, trackingNumber } = req.body;
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (status === 'Cancelled' && (
+      order.delhiveryShipmentCreated ||
+      ['creating', 'unknown'].includes(order.delhiveryShipmentState) ||
+      order.shiprocketOrderCreated ||
+      ['creating', 'unknown'].includes(order.shiprocketOrderState)
+    )) {
+      return res.status(409).json({ message: 'Verify or cancel the courier order before cancelling this order' });
+    }
     if (courier !== undefined) order.courier = courier;
     if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
-    if (assignedCourier !== undefined) {
-      if (assignedCourier === '' || assignedCourier === null) {
-        order.assignedCourier = null;
-      } else {
-        // Verify that the assigned user is a courier
-        const courierUser = await User.findById(assignedCourier);
-        if (!courierUser || courierUser.role !== 'courier') {
-          return res.status(400).json({ message: 'Invalid courier assignment' });
-        }
-        order.assignedCourier = assignedCourier;
-      }
-    }
     if (status && status !== order.status) {
       const wasCancelled = order.status === 'Cancelled';
       order.status = status;

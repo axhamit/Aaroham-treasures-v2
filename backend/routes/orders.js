@@ -6,8 +6,28 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const Setting = require('../models/Setting');
 const { protect } = require('../middleware/auth');
+const { createShipmentForOrder } = require('../utils/delhiveryFulfillment');
+const delhiveryService = require('../utils/delhivery');
 
 router.use(protect);
+
+function customerOrderView(order) {
+  const data = order.toObject();
+  delete data.delhiveryWaybill;
+  delete data.delhiveryStatus;
+  delete data.delhiveryTracking;
+  delete data.delhiveryShipmentCreated;
+  delete data.delhiveryShipmentState;
+  delete data.delhiveryShipmentAttemptedAt;
+  delete data.delhiveryPickupScheduled;
+  delete data.shiprocketOrderId;
+  delete data.shiprocketShipmentId;
+  delete data.shiprocketOrderCreated;
+  delete data.shiprocketOrderState;
+  delete data.shiprocketOrderAttemptedAt;
+  data.tracking = data.tracking.filter((event) => !event.status?.startsWith('Shipment'));
+  return data;
+}
 
 const hasRazorpay = () => !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
 const rzp = () => new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
@@ -57,19 +77,26 @@ router.post('/', async (req, res, next) => {
     await user.save();
 
     const razorpay = paymentMethod === 'ONLINE' ? await razorpayPayload(order) : null;
-    res.status(201).json({ order, razorpay, demoPayment: paymentMethod === 'ONLINE' && !hasRazorpay() });
+    const delivery = paymentMethod === 'COD' ? await createShipmentForOrder(order) : null;
+    const currentOrder = delivery ? await Order.findById(order._id) : order;
+    res.status(201).json({
+      order: customerOrderView(currentOrder),
+      razorpay,
+      demoPayment: paymentMethod === 'ONLINE' && !hasRazorpay(),
+      delivery,
+    });
   } catch (e) { next(e); }
 });
 
 router.get('/mine', async (req, res, next) => {
-  try { res.json(await Order.find({ user: req.user._id }).sort({ createdAt: -1 })); } catch (e) { next(e); }
+  try { res.json((await Order.find({ user: req.user._id }).sort({ createdAt: -1 })).map(customerOrderView)); } catch (e) { next(e); }
 });
 
 router.get('/:id', async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order || (String(order.user) !== String(req.user._id) && req.user.role !== 'admin')) return res.status(404).json({ message: 'Order not found' });
-    res.json(order);
+    res.json(req.user.role === 'admin' ? order : customerOrderView(order));
   } catch (e) { next(e); }
 });
 
@@ -78,7 +105,7 @@ router.post('/:id/pay', async (req, res, next) => {
   try {
     const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
     if (!order || order.paymentMethod !== 'ONLINE' || order.paymentStatus === 'Paid' || order.status === 'Cancelled') return res.status(400).json({ message: 'This order cannot be paid' });
-    res.json({ order, razorpay: await razorpayPayload(order), demoPayment: !hasRazorpay() });
+    res.json({ order: customerOrderView(order), razorpay: await razorpayPayload(order), demoPayment: !hasRazorpay() });
   } catch (e) { next(e); }
 });
 
@@ -105,7 +132,11 @@ router.post('/:id/verify-payment', async (req, res, next) => {
     order.paymentStatus = 'Paid';
     order.tracking.push({ status: order.status, note: 'Payment received' });
     await order.save();
-    res.json(order);
+    const delivery = await createShipmentForOrder(order);
+    const updatedOrder = await Order.findById(order._id);
+    const responseOrder = customerOrderView(updatedOrder);
+    responseOrder.delivery = delivery;
+    res.json(responseOrder);
   } catch (e) { next(e); }
 });
 
@@ -115,12 +146,26 @@ router.put('/:id/cancel', async (req, res, next) => {
     const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
     if (!order) return res.status(404).json({ message: 'Order not found' });
     if (!['Placed', 'Confirmed', 'Packed'].includes(order.status)) return res.status(400).json({ message: 'This order has already shipped and cannot be cancelled' });
+    if (['creating', 'unknown'].includes(order.delhiveryShipmentState)) {
+      return res.status(409).json({ message: 'A courier order exists or may have been created. Verify or cancel it with the courier before cancelling this order.' });
+    }
+    if (order.shiprocketOrderCreated || ['creating', 'unknown'].includes(order.shiprocketOrderState)) {
+      return res.status(409).json({ message: 'A legacy Shiprocket order exists or may have been created. Verify or cancel it with Shiprocket before cancelling this order.' });
+    }
+    if (order.delhiveryShipmentCreated) {
+      const result = await delhiveryService.cancelShipment(order.delhiveryWaybill);
+      if (!result.success) return res.status(502).json(result);
+      order.delhiveryShipmentCreated = false;
+      order.delhiveryShipmentState = 'cancelled';
+      order.delhiveryStatus = 'Cancelled';
+      order.tracking.push({ status: 'Shipment Cancelled', note: 'Delhivery shipment cancelled with customer order', at: new Date() });
+    }
     order.status = 'Cancelled';
     if (order.paymentStatus === 'Paid') order.paymentStatus = 'Refunded'; // trigger the actual refund from your Razorpay dashboard
     order.tracking.push({ status: 'Cancelled', note: 'Cancelled by customer' });
     await order.save();
     await Promise.all(order.items.map((i) => Product.updateOne({ _id: i.product }, { $inc: { stock: i.qty } })));
-    res.json(order);
+    res.json(customerOrderView(order));
   } catch (e) { next(e); }
 });
 
