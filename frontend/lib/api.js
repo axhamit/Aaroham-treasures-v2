@@ -5,11 +5,12 @@ export const API_ORIGIN = API.replace(/\/api\/?$/, '');
 
 const api = axios.create({ baseURL: API });
 
-// attach the JWT to every request
+// attach the JWT to every req
 api.interceptors.request.use((cfg) => {
   if (typeof window !== 'undefined') {
     const t = localStorage.getItem('luxe_token');
     if (t) cfg.headers.Authorization = `Bearer ${t}`;
+
   }
   return cfg;
 });
