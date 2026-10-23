@@ -6,7 +6,7 @@ import { errMsg } from '@/lib/api';
 
 export default function GoogleButton({ onSuccess, mode = 'login' }) {
   const { googleLogin } = useAuth();
-  if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) return <p className="small muted center">Google sign-in is not configured yet (add NEXT_PUBLIC_GOOGLE_CLIENT_ID).</p>;
+  if (!process.env.NEXT_GOOGLE_CLIENT_ID) return <p className="small muted center">Google sign-in is not configured yet (add NEXT_GOOGLE_CLIENT_ID).</p>;
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
       <GoogleLogin

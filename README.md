@@ -67,7 +67,7 @@ npm run dev                        # site on http://localhost:3000
 4. Under **Authorised JavaScript origins** add `http://localhost:3000` (and your real domain when you deploy).
 5. Copy the **Client ID** into:
    - `backend/.env` → `GOOGLE_CLIENT_ID=...`
-   - `frontend/.env.local` → `NEXT_PUBLIC_GOOGLE_CLIENT_ID=...` (same value)
+   - `frontend/.env.local` → `NEXT_GOOGLE_CLIENT_ID=...` (same value)
 
 How it works: the browser gets a Google ID token, sends it to `POST /api/auth/google`, the backend verifies it with Google, creates or finds the user, and returns our own JWT.
 
