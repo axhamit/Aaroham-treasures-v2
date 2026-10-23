@@ -7,7 +7,7 @@ import { SettingsProvider } from '@/context/SettingsContext';
 
 export default function Providers({ children }) {
   return (
-    <GoogleOAuthProvider clientId={process.env.NEXT_GOOGLE_CLIENT_ID || 'missing-client-id'}>
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'missing-client-id'}>
       <SettingsProvider>
         <AuthProvider>
           <ShopProvider>

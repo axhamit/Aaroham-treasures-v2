@@ -67,7 +67,7 @@ npm run dev                        # site on http://localhost:3000
 4. Under **Authorised JavaScript origins** add `http://localhost:3000` (and your real domain when you deploy).
 5. Copy the **Client ID** into:
    - `backend/.env` → `GOOGLE_CLIENT_ID=...`
-   - `frontend/.env.local` → `NEXT_GOOGLE_CLIENT_ID=...` (same value)
+   - `frontend/.env.local` → `NEXT_PUBLIC_GOOGLE_CLIENT_ID=...` (same value)
 
 How it works: the browser gets a Google ID token, sends it to `POST /api/auth/google`, the backend verifies it with Google, creates or finds the user, and returns our own JWT.
 
@@ -131,7 +131,7 @@ frontend/
 - Change the seeded admin password. Add your production domain to the Google OAuth origins.
 - **Images**: uploads are saved to `backend/uploads` on the server disk, which is wiped on most hosts (Render, Railway, Heroku). Move to Cloudinary or S3 for production. Only `middleware/upload.js` needs to change.
 - **Sample product images** come from picsum.photos placeholders. Replace them with real photos from Admin → Products.
-- Deploy the backend (Render, Railway, a VPS) and the frontend (Vercel). Set `NEXT_API_URL` to the deployed API.
+- Deploy the backend (Render, Railway, a VPS) and the frontend (Vercel). Set `NEXT_PUBLIC_API_URL` to the deployed API (for example, `https://api.example.com/api`) and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the Google OAuth client ID. These `NEXT_PUBLIC_` values are embedded in the frontend at build time, so set them in the frontend host before building or redeploying.
 - Serve everything over HTTPS.
 
 ## 10. Known limits and good next steps
