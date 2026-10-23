@@ -24,7 +24,7 @@ export default function Header() {
     return () => document.removeEventListener('click', h);
   }, []);
 
-  const links = [['/products', 'All pieces'], ['/products?category=Watches', 'Watches'], ['/products?category=Handbags', 'Handbags'], ['/products?category=Fragrance', 'Fragrance'], ['/products?category=Jewellery', 'Jewellery']];
+  const links = [['/products', 'All pieces'], ['/products?category=Sarees', 'Sarees'], ['/products?category=Yoga%20Dress', 'Yoga Dress'], ['/products?category=Suits', 'Suits']];
 
   return (
     <>

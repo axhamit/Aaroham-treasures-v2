@@ -91,7 +91,7 @@ export default function AdminProducts() {
             <div className="field"><label>Name</label><input className="input" required value={edit.name} onChange={set('name')} /></div>
             <div className="grid2">
               <div className="field"><label>Brand</label><input className="input" value={edit.brand} onChange={set('brand')} /></div>
-              <div className="field"><label>Category</label><input className="input" required value={edit.category} onChange={set('category')} placeholder="Watches, Handbags…" /></div>
+              <div className="field"><label>Category</label><input className="input" required value={edit.category} onChange={set('category')} placeholder="Sarees, Yoga Dress, Suits" /></div>
             </div>
             <div className="grid3">
               <div className="field"><label>Selling price (₹)</label><input className="input" type="number" min="0" required value={edit.price} onChange={set('price')} /></div>

@@ -8,18 +8,18 @@ const Setting = require('./models/Setting');
 const img = (seed) => [`https://picsum.photos/seed/${seed}/800/1000`, `https://picsum.photos/seed/${seed}-b/800/1000`];
 
 const products = [
-  ['Meridian Automatic 40mm', 'Aurelle', 'Watches', 48500, 54000, 6, true, 'Swiss-made automatic movement with a sapphire case back and a hand-finished sunburst dial. 42-hour power reserve, 100 m water resistance.'],
-  ['Calder Chronograph', 'Aurelle', 'Watches', 72000, 79500, 3, true, 'Steel chronograph with a ceramic bezel and Italian calfskin strap. Each piece is individually numbered.'],
-  ['Verona Slim Dress Watch', 'Norvik', 'Watches', 31200, null, 8, false, 'A 7 mm case, a quiet silver dial and a strap that softens with wear.'],
-  ['Atelier Tote, Cognac', 'Maison Dorr', 'Handbags', 38900, 42000, 5, true, 'Vegetable-tanned full-grain leather, hand-stitched seams and a suede-lined interior. Develops a deep patina over years.'],
-  ['Soho Crossbody, Ink', 'Maison Dorr', 'Handbags', 24500, null, 10, false, 'Compact crossbody with a magnetic flap and brushed brass hardware.'],
-  ['Portofino Weekender', 'Maison Dorr', 'Handbags', 56800, 61000, 2, true, 'Water-resistant canvas, leather trim, and a trolley sleeve. Fits a three-night trip.'],
-  ['Oud Nocturne, 50 ml', 'Séraphine', 'Fragrance', 14800, null, 20, true, 'Smoked oud, saffron and cedar. Eau de parfum, 50 ml, in a hand-numbered flacon.'],
-  ['Iris Blanc, 100 ml', 'Séraphine', 'Fragrance', 11200, 12500, 14, false, 'Powdery orris, white musk and a hint of bergamot. Quiet, close to the skin.'],
-  ['Solitaire Pendant, 18k', 'Veldt & Co', 'Jewellery', 64000, 69900, 4, true, '18k yellow gold with a 0.30 ct certified diamond on a fine cable chain.'],
-  ['Heirloom Signet Ring', 'Veldt & Co', 'Jewellery', 27500, null, 9, false, 'Solid sterling silver, 18k gold plated, with engraving on request.'],
-  ['Pavé Hoop Earrings', 'Veldt & Co', 'Jewellery', 33800, 36000, 7, false, 'Lab-grown diamonds set in recycled 14k gold.'],
-  ['Lucerne Aviator', 'Norvik', 'Eyewear', 18900, null, 12, false, 'Titanium frame with polarised mineral glass lenses. Under 20 g.'],
+  ['Banarasi Heritage Saree', 'Aaroham', 'Sarees', 4850, 5400, 6, true, 'A festive Banarasi-style saree with an ornate woven border, made for celebrations and special occasions.'],
+  ['Printed Chiffon Saree', 'Aaroham', 'Sarees', 3200, 3750, 10, true, 'A lightweight printed chiffon saree with a soft drape and a coordinating blouse piece.'],
+  ['Handloom Cotton Saree', 'Aaroham', 'Sarees', 2650, null, 8, false, 'A breathable handloom-inspired cotton saree with a classic contrast border for everyday elegance.'],
+  ['Everyday Stretch Yoga Set', 'Aaroham Active', 'Yoga Dress', 1890, 2200, 12, true, 'A comfortable stretch yoga set designed for movement, with a supportive top and high-waisted leggings.'],
+  ['Seamless Yoga Leggings', 'Aaroham Active', 'Yoga Dress', 1250, null, 16, false, 'Soft, flexible seamless leggings with a supportive high-rise waist for yoga and daily wear.'],
+  ['Flow Yoga Top', 'Aaroham Active', 'Yoga Dress', 990, 1190, 14, false, 'A breathable, relaxed-fit yoga top that moves comfortably through your practice.'],
+  ['Embroidered Festive Suit', 'Aaroham', 'Suits', 4250, 4800, 5, true, 'A festive three-piece suit set with delicate embroidery, matching trousers and a coordinating dupatta.'],
+  ['Printed Cotton Suit Set', 'Aaroham', 'Suits', 2450, null, 9, false, 'A lightweight printed cotton suit set with a comfortable fit for everyday occasions.'],
+  ['Straight-Cut Kurta Suit', 'Aaroham', 'Suits', 2890, 3290, 7, false, 'A versatile straight-cut kurta suit set with a refined neckline and matching bottoms.'],
+  ['Silk Blend Wedding Saree', 'Aaroham', 'Sarees', 6990, 7500, 4, true, 'A richly detailed silk-blend saree with a statement border for weddings and festive gatherings.'],
+  ['Active Flex Yoga Set', 'Aaroham Active', 'Yoga Dress', 2150, 2490, 7, false, 'A flexible, quick-drying yoga set made for comfortable movement during workouts and practice.'],
+  ['Classic Anarkali Suit', 'Aaroham', 'Suits', 5200, 5900, 3, true, 'A flowing Anarkali-style suit set with graceful detailing for celebrations and formal occasions.'],
 ].map(([name, brand, category, price, mrp, stock, featured, description], i) => ({
   name, brand, category, price, mrp: mrp || undefined, stock, featured, description, images: img(`luxe-${i + 1}`),
 }));
