@@ -131,7 +131,7 @@ frontend/
 - Change the seeded admin password. Add your production domain to the Google OAuth origins.
 - **Images**: uploads are saved to `backend/uploads` on the server disk, which is wiped on most hosts (Render, Railway, Heroku). Move to Cloudinary or S3 for production. Only `middleware/upload.js` needs to change.
 - **Sample product images** come from picsum.photos placeholders. Replace them with real photos from Admin → Products.
-- Deploy the backend (Render, Railway, a VPS) and the frontend (Vercel). Set `NEXT_PUBLIC_API_URL` to the deployed API.
+- Deploy the backend (Render, Railway, a VPS) and the frontend (Vercel). Set `NEXT_API_URL` to the deployed API.
 - Serve everything over HTTPS.
 
 ## 10. Known limits and good next steps
