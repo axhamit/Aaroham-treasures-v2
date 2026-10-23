@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API = process.env.NEXT_API_URL || 'http://localhost:5000/api';
+export const API = process.env.NEXT_API_URL;
 export const API_ORIGIN = API.replace(/\/api\/?$/, '');
 
 const api = axios.create({ baseURL: API });
